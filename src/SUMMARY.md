@@ -8,8 +8,8 @@
 
 - [Machines](./htb/machines.md)
    - [Easy](./htb/machines/easy.md)
-      - [Voleur](./htb/machines/easy/voleur.md)
    - [Medium](./htb/machines/medium.md)
+      - [Voleur](./htb/machines/medium/voleur.md)
    - [Hard](./htb/machines/hard.md)
    - [Insane](./htb/machines/insane.md)
 
