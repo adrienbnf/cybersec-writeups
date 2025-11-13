@@ -12,6 +12,7 @@
    - [Medium](./htb/machines/medium.md)
       - [Voleur](./htb/machines/medium/voleur.md)
    - [Hard](./htb/machines/hard.md)
+      - [Rustykey](./htb/machines/hard/rustykey.md)
    - [Insane](./htb/machines/insane.md)
 
 - [Challenges](./htb/challenges.md)
