@@ -12,6 +12,10 @@
       - [Outbound](./htb/machines/easy/outbound.md)
    - [Medium](./htb/machines/medium.md)
       - [Voleur](./htb/machines/medium/voleur.md)
+   - [Hard](./htb/machines/hard.md)
    - [Insane](./htb/machines/insane.md)
 
 - [Challenges](./htb/challenges.md)
+
+# CTF
+- [Physical CTF](./ctf/physical_ctf.md)
