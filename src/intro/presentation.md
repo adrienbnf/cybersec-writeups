@@ -1,7 +1,5 @@
 # Presentation
 
----
-
 ## About me
 
 Hi ! My name is Adrien Gaillard--Lafargue, I am french IT student and an aspiring pentester.
