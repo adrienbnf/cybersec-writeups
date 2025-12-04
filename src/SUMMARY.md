@@ -15,6 +15,7 @@
       - [Outbound](./htb/machines/easy/outbound.md)
    - [Medium](./htb/machines/medium.md)
       - [Voleur](./htb/machines/medium/voleur.md)
+      - [Imagery](./htb/machines/medium/imagery.md)
    - [Hard](./htb/machines/hard.md)
    - [Insane](./htb/machines/insane.md)
 
