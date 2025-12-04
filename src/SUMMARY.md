@@ -18,7 +18,5 @@
    - [Hard](./htb/machines/hard.md)
    - [Insane](./htb/machines/insane.md)
 
-- [Challenges](./htb/challenges.md)
-
 # CTF
 - [Physical CTF](./ctf/physical_ctf.md)
