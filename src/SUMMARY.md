@@ -11,6 +11,7 @@
       - [Cap](./htb/machines/easy/cap.md)
       - [CodePartTwo](./htb/machines/easy/codeparttwo.md)
       - [Conversor](./htb/machines/easy/conversor.md)
+      - [Editor](./htb/machines/easy/editor.md)
       - [Expressway](./htb/machines/easy/expressway.md)
       - [Outbound](./htb/machines/easy/outbound.md)
    - [Medium](./htb/machines/medium.md)

@@ -12,8 +12,8 @@ Thank you for your comprehension !
 
 ## Machines owned
 
-Until now, I have owned **8** machines on HackTheBox:
-- [Easy](./machines/easy.md) - [5 machines owned]
+Until now, I have owned **9** machines on HackTheBox:
+- [Easy](./machines/easy.md) - [6 machines owned]
 - [Medium](./machines/medium.md) - [3 machines owned]
 - [Hard](./machines/hard.md) - [0 machines owned]
 - [Insane](./machines/insane.md) - [0 machines owned]
