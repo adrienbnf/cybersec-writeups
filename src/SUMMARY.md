@@ -23,3 +23,4 @@
 
 # CTF
 - [Physical CTF](./ctf/physical_ctf.md)
+- [Remote CTF](./ctf/remote_ctf.md)
