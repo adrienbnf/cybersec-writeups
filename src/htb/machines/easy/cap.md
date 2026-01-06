@@ -16,7 +16,7 @@ PORT   STATE SERVICE
 $> ftp 10.10.10.245
 ```
 
-We try to authenticate as anonymous with no password but we get **"530 Login incorrect"**. So it appears that the anonymous authenctication is not activated on this server. We will, then, need some credentials.
+We try to authenticate as anonymous with no password but we get **"530 Login incorrect"**. So it appears that the anonymous authentication is not activated on this server. We will, then, need some credentials.
 
 We will now try to analyze the website hosted on port 80, to see if we find something useful.
 
@@ -91,7 +91,7 @@ And here there is something very unusual which is python3.8 with the cap_setuid 
 
 This is a critical vulnerability considering that in this context any python program can set it's UID to 0 (root) !
 
-We can use the payload given on *https://gtfobins.github.io/gtfobins/python/* to get a root shell:
+We can use the payload given on [GTFObins](https://gtfobins.github.io/gtfobins/python/) to get a root shell:
 
 ```bash
 nathan@cap:~$ python3.8 -c 'import os; os.setuid(0); os.system("/bin/sh")'
